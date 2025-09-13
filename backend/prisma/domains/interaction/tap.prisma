@@ -1,0 +1,17 @@
+// Interaction Domain - User interactions with the game
+
+model Tap {
+  id        String   @id @default(cuid())
+  userId    String
+  roundId   String
+  tapCount  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations to other domains
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  round     Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roundId])
+  @@map("taps")
+}

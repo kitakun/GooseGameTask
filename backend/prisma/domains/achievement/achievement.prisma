@@ -1,0 +1,17 @@
+// Achievement Domain - User achievements and rewards
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String?  // Icon emoji or URL
+  points      Int      @default(0) // Points awarded for achievement
+  userId      String
+  unlockedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Relations to other domains
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("achievements")
+}

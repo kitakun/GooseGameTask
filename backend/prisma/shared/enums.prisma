@@ -1,0 +1,7 @@
+// Shared enums used across multiple domains
+
+enum UserRole {
+  SURVIVOR
+  NIKITA
+  ADMIN
+}

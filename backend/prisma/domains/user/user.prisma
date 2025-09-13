@@ -1,0 +1,16 @@
+// User Domain - User management and authentication
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations to other domains
+  taps         Tap[]
+  achievements Achievement[]
+
+  @@map("users")
+}
