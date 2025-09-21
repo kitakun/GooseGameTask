@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useRoundsStore } from "../store/roundsStore";
 import { useAuthStore } from "../store/authStore";
 import { tapApi } from "../api";
+import { UserTapStats, RoundStats, Winner } from "../types";
 import { getRoundStatus } from "../utils/roundUtils";
 import { useDelayedLoader } from "../hooks/useDelayedLoader";
 import {
@@ -13,7 +14,6 @@ import {
   RoundStatusCard,
   GameArea,
   StatsSection,
-  TapResult,
 } from "../components/RoundPage";
 
 const RoundPage = () => {
@@ -23,18 +23,52 @@ const RoundPage = () => {
   const showLoader = useDelayedLoader(isLoading, 250);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isTapping, setIsTapping] = useState(false);
-  const [tapResult, setTapResult] = useState<{
-    points: number;
-    totalPoints: number;
-    taps: number;
-  } | null>(null);
+  const [tapSuccess, setTapSuccess] = useState<boolean>(false);
   const [showTapAnimation, setShowTapAnimation] = useState(false);
+  const [userStats, setUserStats] = useState<UserTapStats>({ taps: 0, points: 0 });
+  const [roundStats, setRoundStats] = useState<RoundStats>({ totalTaps: 0, totalPoints: 0 });
+  const [winner, setWinner] = useState<Winner | null>(null);
+
+  // Fetch user and round statistics
+  const fetchStats = useCallback(async () => {
+    if (!currentRound || !user) return;
+    
+    try {
+      const response = await tapApi.getStats(currentRound.id);
+      setUserStats(response.userStats);
+      setRoundStats(response.roundStats);
+      setWinner(response.winner);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    }
+  }, [currentRound, user]);
 
   useEffect(() => {
     if (id) {
       fetchRound(id);
     }
   }, [id, fetchRound]);
+
+  // Auto-refresh round data and user stats every 2 seconds ONLY when round is active
+  useEffect(() => {
+    if (!currentRound || !user) return;
+
+    const interval = setInterval(() => {
+      // Always check current round status before fetching
+      const status = getRoundStatus(currentRound);
+      if (status.status === 'active') {
+        fetchRound(currentRound.id);
+        fetchStats();
+      }
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [currentRound, user, fetchRound, fetchStats]);
+
+  // Initial fetch of stats
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   useEffect(() => {
     if (!currentRound) return;
@@ -59,23 +93,23 @@ const RoundPage = () => {
     setShowTapAnimation(true);
 
     try {
-      const result = await tapApi.tap(currentRound.id);
-      setTapResult({
-        points: result.points,
-        totalPoints: result.totalPoints,
-        taps: result.taps,
-      });
+      // Atomic operation - just send roundId, no response data
+      await tapApi.tap(currentRound.id);
+      setTapSuccess(true);
 
-      if (id) {
-        fetchRound(id);
-      }
+      // Refresh round data and stats immediately
+      fetchRound(currentRound.id);
+      fetchStats();
     } catch (error: any) {
       console.error("Tap failed:", error);
     } finally {
       setIsTapping(false);
-      setTimeout(() => setShowTapAnimation(false), 200);
+      setTimeout(() => {
+        setShowTapAnimation(false);
+        setTapSuccess(false);
+      }, 200);
     }
-  }, [currentRound, user, isTapping, id, fetchRound]);
+  }, [currentRound, user, isTapping, fetchRound, fetchStats]);
 
   if (showLoader) {
     return <RoundLoadingState />;
@@ -111,16 +145,39 @@ const RoundPage = () => {
         onTap={handleTap}
       />
       
+      {/* Rules Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-bold text-blue-900 mb-4">
+          Правила раунда:
+        </h3>
+        <div className="space-y-2 text-blue-800">
+          <div className="flex items-start">
+            <span className="font-medium mr-2">•</span>
+            <span>1 тап = 1 очко, каждый одиннадцатый тап дает 10 очков</span>
+          </div>
+          <div className="flex items-start">
+            <span className="font-medium mr-2">•</span>
+            <span>Тапать можно только в рамках активного раунда</span>
+          </div>
+          <div className="flex items-start">
+            <span className="font-medium mr-2">•</span>
+            <span>Активный раунд тот, который уже начался, но еще не закончился</span>
+          </div>
+        </div>
+      </div>
+      
       <StatsSection 
         round={currentRound} 
-        userRole={user?.role} 
+        userRole={user?.role}
+        userStats={userStats}
+        roundStats={roundStats}
+        winner={winner}
       />
       
-      {tapResult && (
-        <TapResult 
-          points={tapResult.points} 
-          totalPoints={tapResult.totalPoints} 
-        />
+      {tapSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+          Tap recorded successfully!
+        </div>
       )}
     </div>
   );

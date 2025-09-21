@@ -38,6 +38,27 @@ export interface TapResponse {
   roundActive: boolean;
 }
 
+export interface UserTapStats {
+  taps: number;
+  points: number;
+}
+
+export interface RoundStats {
+  totalTaps: number;
+  totalPoints: number;
+}
+
+export interface Winner {
+  username: string;
+  points: number;
+}
+
+export interface TapStatsResponse {
+  userStats: UserTapStats;
+  roundStats: RoundStats;
+  winner: Winner | null;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;

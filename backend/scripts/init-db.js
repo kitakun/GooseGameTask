@@ -1,30 +1,27 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Initializing database...');
+  console.log("Initializing database...");
 
   try {
     await prisma.$connect();
-    console.log('Database connection successful');
+    console.log("Database connection successful");
   } catch (error) {
-    console.error('Database connection failed:', error.message);
+    console.error("Database connection failed:", error.message);
     process.exit(1);
   }
 
   const userCount = await prisma.user.count();
   console.log(`Found ${userCount} users in database`);
 
-  const roundCount = await prisma.round.count();
-  console.log(`Found ${roundCount} rounds in database`);
-
-  console.log('Database initialization complete');
+  console.log("Database initialization complete");
 }
 
 main()
   .catch((e) => {
-    console.error('Database initialization failed:', e);
+    console.error("Database initialization failed:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,16 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const SCHEMA_DIR = path.join(__dirname, '..', 'prisma');
-const OUTPUT_FILE = path.join(SCHEMA_DIR, 'schema.prisma');
+const SCHEMA_DIR = path.join(__dirname, "..", "prisma");
+const OUTPUT_FILE = path.join(SCHEMA_DIR, "schema.prisma");
 
-const SCHEMA_FILES = [
-  'shared/enums.prisma',
-  'domains/user/user.prisma',
-  'domains/game/round.prisma',
-  'domains/interaction/tap.prisma',
-  'domains/achievement/achievement.prisma'
-];
+const SCHEMA_FILES = ["shared/enums.prisma", "domains/user/user.prisma"];
 
 const HEADER = `
 generator client {
@@ -30,28 +24,28 @@ datasource db {
 `;
 
 function buildSchema() {
-  console.log('Building Prisma schema from DDD domains...');
-  
+  console.log("Building Prisma schema from DDD domains...");
+
   let schemaContent = HEADER;
-  
+
   // Read and combine all schema files
   SCHEMA_FILES.forEach((filePath, index) => {
     const fullPath = path.join(SCHEMA_DIR, filePath);
-    
+
     if (fs.existsSync(fullPath)) {
-      const content = fs.readFileSync(fullPath, 'utf8');
-      const domainName = filePath.split('/')[1] || 'shared';
-      
+      const content = fs.readFileSync(fullPath, "utf8");
+      const domainName = filePath.split("/")[1] || "shared";
+
       schemaContent += `\n// ===== ${domainName.toUpperCase()} DOMAIN =====\n`;
       schemaContent += content;
-      schemaContent += '\n';
-      
+      schemaContent += "\n";
+
       console.log(`[DONE] Added ${filePath}`);
     } else {
       console.warn(`[ERR] File not found: ${filePath}`);
     }
   });
-  
+
   // Write the combined schema
   fs.writeFileSync(OUTPUT_FILE, schemaContent);
   console.log(`[DONE] Schema built successfully: ${OUTPUT_FILE}`);

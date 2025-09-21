@@ -1,20 +1,15 @@
 import { FastifyRequest, FastifyReply } from "fastify";
+import { UserRole } from "@/entities/user/model";
 
 export type AuthenticatedRequest = FastifyRequest & {
   user?: {
     id: string;
     username: string;
-    role: string;
+    role: UserRole;
   };
-};
-
-export type ApiResponse<T = any> = {
-  data?: T;
-  error?: string;
-  message?: string;
 };
 
 export type MiddlewareFunction = (
   request: AuthenticatedRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => Promise<void>;
